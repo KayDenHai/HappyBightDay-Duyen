@@ -13,7 +13,6 @@
 }
 
 body{
-    overflow:hidden;
     font-family:Arial, sans-serif;
     background:black;
 }
@@ -22,8 +21,9 @@ body{
 .sky{
     position:fixed;
     width:100%;
-    height:100vh;
+    height:100dvh; /* chuẩn mobile */
     background:radial-gradient(ellipse at bottom,#0d1b2a 0%,#090a0f 40%,#000 100%);
+    overflow:hidden;
 }
 
 canvas{
@@ -38,8 +38,8 @@ button{
     top:50%;
     left:50%;
     transform:translate(-50%,-50%);
-    padding:18px 50px;
-    font-size:22px;
+    padding:16px 40px;
+    font-size:20px;
     border:none;
     border-radius:40px;
     cursor:pointer;
@@ -50,8 +50,8 @@ button{
     transition:0.3s;
 }
 
-button:hover{
-    transform:translate(-50%,-50%) scale(1.1);
+button:active{
+    transform:translate(-50%,-50%) scale(0.95);
 }
 
 .second{
@@ -61,10 +61,11 @@ button:hover{
 /* IMAGE */
 img{
     position:absolute;
-    bottom:60px;
+    bottom:40px;
     left:50%;
     transform:translateX(-50%);
-    width:260px;
+    width:45%;
+    max-width:320px;
     border-radius:20px;
     opacity:0;
     transition:2s;
@@ -88,32 +89,48 @@ img{
 <script>
 
 /* ======================= */
+/* SETUP CANVAS DPI FIX */
+/* ======================= */
+
+function setupCanvas(canvas, ctx){
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+    canvas.style.width = window.innerWidth + "px";
+    canvas.style.height = window.innerHeight + "px";
+    ctx.scale(dpr, dpr);
+}
+
+/* ======================= */
 /* PAGE 1 - STAR SKY */
 /* ======================= */
 
 const c1=document.getElementById("canvas1");
 const ctx1=c1.getContext("2d");
 
-c1.width=window.innerWidth;
-c1.height=window.innerHeight;
+setupCanvas(c1,ctx1);
 
 let stars1=[];
 
-for(let i=0;i<200;i++){
-    stars1.push({
-        x:Math.random()*c1.width,
-        y:Math.random()*c1.height,
-        size:Math.random()*2,
-        speed:Math.random()*0.4+0.1
-    });
+function createStars1(){
+    stars1=[];
+    for(let i=0;i<200;i++){
+        stars1.push({
+            x:Math.random()*window.innerWidth,
+            y:Math.random()*window.innerHeight,
+            size:Math.random()*2,
+            speed:Math.random()*0.4+0.1
+        });
+    }
 }
+createStars1();
 
 function animateStars1(){
-    ctx1.clearRect(0,0,c1.width,c1.height);
+    ctx1.clearRect(0,0,window.innerWidth,window.innerHeight);
 
     stars1.forEach(s=>{
         s.y-=s.speed;
-        if(s.y<0) s.y=c1.height;
+        if(s.y<0) s.y=window.innerHeight;
 
         ctx1.beginPath();
         ctx1.arc(s.x,s.y,s.size,0,Math.PI*2);
@@ -123,7 +140,6 @@ function animateStars1(){
 
     requestAnimationFrame(animateStars1);
 }
-
 animateStars1();
 
 /* ======================= */
@@ -142,30 +158,27 @@ function openGift(){
     document.getElementById("page1").style.display="none";
     document.getElementById("page2").style.display="block";
 
-    c2.width=window.innerWidth;
-    c2.height=window.innerHeight;
+    setupCanvas(c2,ctx2);
 
     stars2=[];
     backgroundStars=[];
 
-    /* sao nền */
     for(let i=0;i<250;i++){
         backgroundStars.push({
-            x:Math.random()*c2.width,
-            y:Math.random()*c2.height,
+            x:Math.random()*window.innerWidth,
+            y:Math.random()*window.innerHeight,
             size:Math.random()*1.5,
             opacity:Math.random(),
             twinkle:(Math.random()*0.02)+0.005
         });
     }
 
-    /* sao ghép chữ */
     for(let i=0;i<450;i++){
         stars2.push({
-            x:Math.random()*c2.width,
-            y:Math.random()*c2.height,
-            tx:Math.random()*c2.width,
-            ty:Math.random()*c2.height
+            x:Math.random()*window.innerWidth,
+            y:Math.random()*window.innerHeight,
+            tx:0,
+            ty:0
         });
     }
 
@@ -181,7 +194,7 @@ function openGift(){
     },5000);
 }
 
-/* TẠO CHỮ */
+/* TEXT SHAPE */
 function createTextShape(text,fontSize){
 
     targetPoints=[];
@@ -196,7 +209,6 @@ function createTextShape(text,fontSize){
     tctx.fillStyle="white";
     tctx.textAlign="center";
     tctx.textBaseline="middle";
-
     tctx.fillText(text,tempCanvas.width/2,tempCanvas.height/2);
 
     let data=tctx.getImageData(0,0,tempCanvas.width,tempCanvas.height).data;
@@ -210,10 +222,6 @@ function createTextShape(text,fontSize){
         }
     }
 
-    assignTargets();
-}
-
-function assignTargets(){
     for(let i=0;i<stars2.length;i++){
         let p=targetPoints[i%targetPoints.length];
         stars2[i].tx=p.x;
@@ -224,14 +232,11 @@ function assignTargets(){
 /* ANIMATE PAGE 2 */
 function animateStars2(){
 
-    ctx2.clearRect(0,0,c2.width,c2.height);
+    ctx2.clearRect(0,0,window.innerWidth,window.innerHeight);
 
-    /* vẽ sao nền */
     backgroundStars.forEach(s=>{
         s.opacity+=s.twinkle;
-        if(s.opacity>1 || s.opacity<0){
-            s.twinkle*=-1;
-        }
+        if(s.opacity>1 || s.opacity<0) s.twinkle*=-1;
 
         ctx2.beginPath();
         ctx2.arc(s.x,s.y,s.size,0,Math.PI*2);
@@ -239,7 +244,6 @@ function animateStars2(){
         ctx2.fill();
     });
 
-    /* vẽ sao ghép chữ */
     stars2.forEach(s=>{
         s.x+=(s.tx-s.x)*0.06;
         s.y+=(s.ty-s.y)*0.06;
@@ -252,6 +256,13 @@ function animateStars2(){
 
     requestAnimationFrame(animateStars2);
 }
+
+/* RESIZE FIX */
+window.addEventListener("resize",()=>{
+    setupCanvas(c1,ctx1);
+    setupCanvas(c2,ctx2);
+    createStars1();
+});
 
 </script>
 </body>
